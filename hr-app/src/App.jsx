@@ -4,6 +4,34 @@ import { useState, useEffect, useRef, useCallback, useReducer } from "react";
 // Sends the PDF as base64 to claude-sonnet-4-20250514 and asks it to return
 // only the plain text content of the resume — no summarisation.
 async function extractPDFText(base64Data) {
+  if (!window.pdfjsLib) {
+    await new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+
+  const binary = atob(base64Data);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+  const pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
+  let text = "";
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(item => item.str).join(" ") + "\n";
+  }
+
+  if (!text.trim()) throw new Error("Could not extract text from PDF.");
+  return text.trim();
+}
+/*async function extractPDFText(base64Data) {
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -29,7 +57,7 @@ async function extractPDFText(base64Data) {
   const text = (data.content || []).map(b => b.text || "").join("\n").trim();
   if (!text) throw new Error("Could not extract text from PDF.");
   return text;
-}
+}*/
 
 // ════════════════════════════════════════════════════════════════════════════════
 //  TRUE SELF-TRAINING ADAPTIVE INTERVIEW ENGINE
