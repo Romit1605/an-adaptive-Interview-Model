@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+
+# Uploaded files (PII — never commit real resumes)
+backend/uploads/
+
+# Node
+hr-app/node_modules/
+hr-app/dist/
+hr-app/.vite/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.bak
